@@ -36,7 +36,7 @@
         
         <div class="card-body">
             <h3 class="card-title mb-3 text-center">Test Machine</h3>
-            <form action="http://localhost:8000/savetest/" method="POST">
+            <form action="/savetest" method="POST">
             @CSRF
             <?php
               foreach ($balls as $key=>$ball) { ?>

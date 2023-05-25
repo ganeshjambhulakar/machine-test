@@ -7,6 +7,8 @@ use App\Models\Test;
 use App\Models\Balls;
 use App\Models\Buckets;
 
+use function Psy\debug;
+
 class MachineTest extends Controller
 {
     public function dashboard()
@@ -15,13 +17,13 @@ class MachineTest extends Controller
 
         $balls = Balls::all();
         $buckets = Buckets::all();
-        $tests= Test::all();
+        $tests = Test::all();
         $bucketsList = [];
         $ballsList = [];
-        foreach($balls as $k=>$ball) {
+        foreach ($balls as $k => $ball) {
             $ballsList[$ball->id] = $ball->name;
         }
-        foreach($buckets as $k=>$bucket) {
+        foreach ($buckets as $k => $bucket) {
             $bucketsList[$bucket->id] = $bucket->name;
         }
         return  view("dashboard", compact('buckets', 'balls', 'tests', 'ballsList', 'bucketsList'));
@@ -49,29 +51,27 @@ class MachineTest extends Controller
 
         return  view("edit_balls", compact('ball'));
     }
-    public function store_ball(Request $req, $id=false)
+    public function store_ball(Request $req, $id = false)
     {
         $req->validate([
             'name' => 'required',
             'volume' => 'required',
         ]);
         $obj = new Balls();
-        if($id) {
+        if ($id) {
             $obj = Balls::find($id);
         }
         $obj->name = $req->post('name');
         $obj->volume = $req->post('volume');
         $req->session()->flash('status', 'success');
-        if($id) {
+        if ($id) {
             $obj->update();
             $req->session()->flash('msg', "Balls are updated successful!");
-
         } else {
             $obj->save();
             $req->session()->flash('msg', "Balls are added successful!");
-
         }
-        Buckets::query()->update(['filled_volume'=>0]);
+        Buckets::query()->update(['filled_volume' => 0]);
         Test::query()->delete();
 
         //
@@ -79,24 +79,23 @@ class MachineTest extends Controller
         return  redirect("/");
     }
 
-    public function store_bucket(Request $req, $id=false)
+    public function store_bucket(Request $req, $id = false)
     {
         $req->validate([
             'name' => 'required',
             'volume' => 'required',
         ]);
         $obj = new Buckets();
-        if($id) {
+        if ($id) {
             $obj = Buckets::find($id);
         }
         $obj->name = $req->post('name');
         $obj->volume = $req->post('volume');
         $obj->filled_volume = 0;
         $req->session()->flash('status', 'success');
-        if($id) {
+        if ($id) {
             $obj->update();
             $req->session()->flash('msg', "Buckets are updated successful! and all bucket gets emptied");
-
         } else {
             $obj->save();
             $req->session()->flash('msg', "Buckets are added successful! and all bucket gets emptied");
@@ -104,84 +103,71 @@ class MachineTest extends Controller
         $obj = new Buckets();
         $obj->filled_volume = 0;
         $obj->update();
+        Test::query()->delete();
+
         //
         return  redirect("/");
     }
     public function test(Request $req)
     {
-        // $req->validate([
-        //     'buckets_id' => 'required',
-        //     'balls_id' => 'required',
-        //     'numbers_of_ball' => 'required',
-        // ]);
-        // $obj = new Test();
-        // $obj->buckets_id = $req->post('buckets_id');
-        // $obj->balls_id = $req->post('balls_id');
-        // $obj->numbers_of_ball = $req->post('numbers_of_ball');
+
+        $bucketObj = Buckets::all();
+        $numbers_of_ball = $req->post('numbers_of_ball');
         // echo "<pre>";
-        // print_r($req->post('numbers_of_ball'));
-          $bucketObj = Buckets::all();
-        // echo $newTotal = $req->post('numbers_of_ball') * $ball->volume;
-        foreach($req->post('numbers_of_ball') as $k=>$ballArr){
-          $ball = Balls::find($k);
-          if(!isset($ballArr) || $ballArr==null ){
-            continue;
-        }
-        $noOfBalls = $ballArr;
-       foreach($bucketObj as $j=>$bucket){
-           
-            // echo $bucket;
-            $remaining = $bucket->volume - $bucket->filled_volume;
-            $newTotal = $ballArr * $ball->volume;
-            $obj = new Test();
-            $obj->buckets_id = $bucket['id'];
-            $obj->balls_id = $k;
-            $bObj = Buckets::find($bucket['id']);
+        if (count($bucketObj) > 0) {
 
-             if($newTotal > $remaining) { 
-                    $noOfBalls = (int) $remaining/$ball->volume;
-                    $obj->numbers_of_ball =  $noOfBalls;
-                    $bObj->filled_volume = $bObj->filled_volume + ($noOfBalls * $ball->volume);
-                  }else {
-                    $obj->numbers_of_ball =  $noOfBalls;
-                    $bObj->filled_volume = $bObj->filled_volume + ($noOfBalls * $ball->volume);
+             $balls=[];
+             $msg = 'Places ';
+            foreach ($bucketObj as $j => $bucket) {
+                $remaining = $bucket->volume - $bucket->filled_volume;
+
+                foreach ($numbers_of_ball as $k => $ballArr) {
+                    if ($ballArr != 0 && $remaining != 0 && $ballArr !='') {
+                        $ball = Balls::find($k);
+                        $newTotal = $ballArr * $ball->volume;
+                        $bObj = Buckets::find($bucket['id']);
+                        $obj = new Test();
+                        $obj->buckets_id = $bucket['id'];
+                        $obj->balls_id = $k;
+                        if ($newTotal <= $remaining) {
+                            $obj->numbers_of_ball =  $ballArr;
+                            $bObj->filled_volume = $bObj->filled_volume + $newTotal;
+                            $remaining = $remaining - $newTotal;
+                            $bObj->update();
+                            $obj->save();
+                            $msg .= " $ball->name  $ballArr and ";
+                            $balls[$k] = $ballArr;
+                        } else {
+                            $noOfBalls = floor($remaining / $ball->volume);
+                            if ($noOfBalls != 0) {
+                                $obj->numbers_of_ball =  $noOfBalls;
+                                $newTotal = $noOfBalls * $ball->volume;
+                                $bObj->filled_volume = $bObj->filled_volume + $newTotal;
+                                $msg .= "$ball->name  $noOfBalls and";
+
+                                $bObj->update();
+                                $obj->save();
+                                $balls[$k] = $noOfBalls;
+                                $remaining = $remaining - $newTotal;
+                            }
+                        }
+                        $numbers_of_ball[$k] = $numbers_of_ball[$k] - $ballArr;  // removed stored ball in bucket from aray
+
+                    }
                 }
-                if($obj->numbers_of_ball){
-                $bObj->update();
-                $obj->save();
-                }else{
+            }
+            if(count($balls) >0){
+                $req->session()->flash('status', 'success');
+                $req->session()->flash('msg', $msg." Balls are added in bucket successful!");
+            }else{
                 $req->session()->flash('status', 'error');
-                $req->session()->flash('msg', "Sorry No balls are added in bucket !");
-                return  redirect("/");
-
-                }
-                
-          }
-        
+                $req->session()->flash('msg', "No Balls are added in bucket!");
+            }
+           
+        } else {
+            $req->session()->flash('status', 'error');
+            $req->session()->flash('msg', "Bucket not available Please add buckets");
         }
-// die;
-
-        // echo $remaining = $obj1->volume - $obj1->filled_volume;
-        // echo $newTotal = $req->post('numbers_of_ball') * $ball->volume;
-        // if($newTotal > $remaining) {
-        //     $noOfBalls = (int) $remaining/$ball->volume;
-        //     $obj->numbers_of_ball =  $noOfBalls;
-        //     $obj1->filled_volume = $obj1->filled_volume + ($noOfBalls * $ball->volume);
-        //     $req->session()->flash('status', 'error');
-        //     if($noOfBalls) {
-        //         $req->session()->flash('msg', "Only $noOfBalls balls are added in bucket successful!");
-        //     } else {
-        //         $req->session()->flash('msg', "Sorry No balls are added in bucket !");
-        //         return  redirect("/");
-        //     }
-
-        // } else {
-        //     $req->session()->flash('status', 'success');
-        //     $obj1->filled_volume = $obj1->filled_volume + ($req->post('numbers_of_ball') * $ball->volume);
-        //     $req->session()->flash('msg', "All balls are added in bucket successful!");
-        // }
-
-
         return  redirect("/");
     }
 }
