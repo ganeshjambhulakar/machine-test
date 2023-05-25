@@ -38,34 +38,20 @@
             <h3 class="card-title mb-3 text-center">Test Machine</h3>
             <form action="http://localhost:8000/savetest/" method="POST">
             @CSRF
-                <div class="form-group">
-                    <label>Select Bucket Name</label>
-                    <select  name="buckets_id" class="form-control" id="bucket_id" required >
-                      <option value="">Select Bucket</option>
-                    <?php
-                    foreach ($buckets as $key=>$bucket) {
-                        echo "<option value='".$bucket['id']."'>".$bucket['name']."</option>";
-                    }
-    ?>
-                    
-                   </select >
-                 </div>
-                <div class="form-group">
-                    <label >Ball name</label>
-                    <select  name="balls_id" class="form-control" id="ball_id" required>
-                    <option value="">Select Ball</option>
-                    <?php
-                      foreach ($balls as $key=>$ball) {
-                          echo "<option value='".$ball['id']."'>".$ball['name']."</option>";
-                      }
-                      ?>
-                   </select > 
-                </div>
-                <div class="form-group">
-                    <label >Number Of Bolls</label>
-                    <input type="number" name="numbers_of_ball" class="form-control" id="name"  placeholder="Enter number of boll to be added in bucket" required>
-                 </div>  
-                <button type="submit" class="btn btn-warning btn-lg btn-block">Enter Balls in Bucket</button>
+            <?php
+              foreach ($balls as $key=>$ball) { ?>
+                  <div class="row">
+                    <div class="col-md-2">
+                    <label><?php echo $ball['name'];?></label>
+                    </div>
+                    <div class="col-md-10">
+                    <div class="form-group">
+                    <input type="number" name="numbers_of_ball[<?= $ball['id'] ?>]" class="form-control" id="name" >
+                    </div>  
+                    </div>
+                  </div>
+                  <?php   }    ?>
+                <button type="submit" class="btn btn-warning btn-lg btn-block">Save</button>
              </form>
         </div>
     </div>
@@ -75,29 +61,29 @@
             <h3 class="card-title mb-3 text-center">Result</h3>
             <?php
                 $bucketData = [] ;
-                foreach($tests as $k=>$test) {
-                    if(isset($bucketData[$bucketsList[$test->buckets_id]][$ballsList [$test->balls_id]])) {
-                        $bucketData[$bucketsList[$test->buckets_id]][$ballsList [$test->balls_id]] += $test->numbers_of_ball ;
-                    } else {
-                        $bucketData[$bucketsList[$test->buckets_id]][$ballsList[$test->balls_id]] =  $test->numbers_of_ball;
-                    }
-                }
-                echo "<ul>";
-                foreach($bucketData as $k=>$bucket) {
-                    echo "<li>  $k : <b> Places ";
-                    $i =  count($bucket);
-                    foreach($bucket as $k1=>$buct) {
-                        echo  " $buct  $k1 Balls " ;
-                        $i--;
-                        if($i) {
-                            echo " and ";
-                        }
+    foreach($tests as $k=>$test) {
+        if(isset($bucketData[$bucketsList[$test->buckets_id]][$ballsList [$test->balls_id]])) {
+            $bucketData[$bucketsList[$test->buckets_id]][$ballsList [$test->balls_id]] += $test->numbers_of_ball ;
+        } else {
+            $bucketData[$bucketsList[$test->buckets_id]][$ballsList[$test->balls_id]] =  $test->numbers_of_ball;
+        }
+    }
+    echo "<ul>";
+    foreach($bucketData as $k=>$bucket) {
+        echo "<li>  $k : <b> Places ";
+        $i =  count($bucket);
+        foreach($bucket as $k1=>$buct) {
+            echo  " $buct  $k1 Balls " ;
+            $i--;
+            if($i) {
+                echo " and ";
+            }
 
-                    }
-                    echo "</b></li>";
-                }
-                echo "</ul>";
-             ?>
+        }
+        echo "</b></li>";
+    }
+    echo "</ul>";
+    ?>
             
         </div>
     </div>
