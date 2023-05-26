@@ -39,6 +39,16 @@
             <form action="/savetest" method="POST">
             @CSRF
             <?php
+            if(count($balls)<=0){
+              ?>
+              <div class="row">
+                    <div class="col-md-12 text-center">
+                    <label>No Balls available,Please add Balls</label>
+                    </div>
+                    </div>
+                  </div>
+              <?php
+            }
               foreach ($balls as $key=>$ball) { ?>
                   <div class="row">
                     <div class="col-md-2">
@@ -50,8 +60,17 @@
                     </div>  
                     </div>
                   </div>
-                  <?php   }    ?>
-                <button type="submit" class="btn btn-warning btn-lg btn-block">Save</button>
+                  <?php   }   
+                  if(count($bucketsList) >=0){
+                    ?>
+                      <button type="button" disabled  class="btn btn-warning btn-lg btn-block">No Bucket are Available to store balls</button>
+                    <?php
+                  }else{
+                    ?>
+                     <button type="submit" class="btn btn-warning btn-lg btn-block">PLACE BALLS IN BUCKET</button>
+                    <?php
+                  }
+                  ?>
              </form>
         </div>
     </div>
